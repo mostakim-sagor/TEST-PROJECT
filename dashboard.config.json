@@ -1,0 +1,6 @@
+{
+  "_instructions": "dashboard.config.json ফাইলে 'password' field-এ আপনার password লিখুন। Bot restart করলে password নিরাপদে save হবে এবং এখান থেকে plain text মুছে যাবে। Password কমপক্ষে ৪ অক্ষরের হতে হবে।",
+  "_example": "password field-এ লিখুন: mostakim123",
+  "password": "",
+  "_status": "Password saved securely. Plain text cleared."
+}
