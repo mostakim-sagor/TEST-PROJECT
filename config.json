@@ -12,7 +12,7 @@
   "antiInbox": false,
   "language": "en",
   "notesLanguage": "change to your language with ISO 639-1 code, available languages: vi (Vietnamese), en (English)",
-  "nickNameBot": "𝐌𝐎𝐒𝐓𝐀𝐊𝐈𝐌 𝐆𝐎𝐀𝐓 𝐁𝐎𝐓",
+  "nickNameBot": "MOSTAKIM V2 BOT",
   "prefix": "*",
   "noPrefix": true,
   "noPrefixNotes": "When true, Bot Admins only can run commands without the prefix. Everyone else MUST use the prefix.",

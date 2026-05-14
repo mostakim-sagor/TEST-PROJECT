@@ -2,5 +2,6 @@
   "_instructions": "নিচের 'password' field-এ আপনার পছন্দের password লিখুন (কমপক্ষে ৪ অক্ষর)। তারপর bot restart করুন। Bot নিজেই password নিরাপদে save করবে এবং এখান থেকে মুছে ফেলবে।",
   "_example": "password field-এ লিখুন: mostakim2024",
   "_note": "Render/Railway তে DASHBOARD_PASSWORD নামে environment secret সেট করুন।",
-  "password": ""
+  "password": "",
+  "_status": "Password saved securely. Plain text cleared."
 }
