@@ -358,23 +358,43 @@ function storeMessage(event) {
         }
 }
 
+// ─── Emoji normalizer ─────────────────────────────────────────────────────
+// Facebook reactions may omit variation selectors (U+FE0F / U+FE0E).
+// Stripping them from both sides ensures a reliable match.
+function normalizeEmoji(str) {
+        if (!str) return "";
+        return str.replace(/[\uFE0E\uFE0F]/g, "").trim();
+}
+
+function emojiMatch(reaction, list) {
+        const r = normalizeEmoji(reaction);
+        return list.some(e => normalizeEmoji(e) === r);
+}
+
 async function handleReactModeration(api, event) {
         const { reaction, messageID, senderID, threadID } = event;
         const senderIDStr = String(senderID);
 
-        const isAdmin = (global.config.ADMINBOT || []).includes(senderIDStr);
+        const isAdmin   = (global.config.ADMINBOT || []).includes(senderIDStr);
         const storedMsg = reactStore.get(messageID);
 
-        // Read reactBy lists from config.json
-        const reactBy = config.reactBy || {};
+        // Read reactBy lists from config.json — always re-read for live config changes
+        let reactBy = {};
+        try {
+                const raw = require("fs").readFileSync(require("path").join(__dirname, "../../config.json"), "utf-8");
+                reactBy = JSON.parse(raw).reactBy || {};
+        } catch (_) {
+                reactBy = config.reactBy || {};
+        }
+
         const deleteEmojis  = reactBy.delete  || ["🗑️", "❌", "😠", "😡", "😾"];
         const kickEmojis    = reactBy.kick    || ["🖕", "🦵"];
         const warnEmojis    = reactBy.warn    || ["⚠️"];
         const muteEmojis    = reactBy.mute    || ["🔇", "🤐"];
         const addUserEmojis = reactBy.adduser || ["🫂"];
 
-        // delete → unsend the reacted message
-        if (deleteEmojis.includes(reaction)) {
+        // delete → unsend the reacted message (no storedMsg needed)
+        if (emojiMatch(reaction, deleteEmojis)) {
                 if (!isAdmin) return;
                 try { api.unsendMessage(messageID); } catch (_) {}
                 return;
@@ -382,10 +402,10 @@ async function handleReactModeration(api, event) {
 
         if (!storedMsg) return;
         const targetID = storedMsg.senderID;
-        if (targetID === String(api.getCurrentUserID())) return;
+        if (targetID === String(api.getCurrentUserID())) return; // don't target bot itself
 
         // kick → remove user from group
-        if (kickEmojis.includes(reaction)) {
+        if (emojiMatch(reaction, kickEmojis)) {
                 if (!isAdmin) return;
                 try {
                         await new Promise((res, rej) =>
@@ -399,22 +419,22 @@ async function handleReactModeration(api, event) {
         }
 
         // warn → send warning message
-        if (warnEmojis.includes(reaction)) {
+        if (emojiMatch(reaction, warnEmojis)) {
                 if (!isAdmin) return;
                 api.sendMessage(`⚠️ Warning issued to user ${targetID}. Please follow group rules.`, threadID);
                 return;
         }
 
-        // mute → add to banned list temporarily
-        if (muteEmojis.includes(reaction)) {
+        // mute → add to userBanned temporarily
+        if (emojiMatch(reaction, muteEmojis)) {
                 if (!isAdmin) return;
                 global.data.userBanned.set(targetID, { reason: "Muted via reaction", bannedBy: senderIDStr, time: Date.now() });
                 api.sendMessage(`🔇 User ${targetID} has been muted. Use *unban to restore.`, threadID);
                 return;
         }
 
-        // adduser → (placeholder for adding users back)
-        if (addUserEmojis.includes(reaction)) {
+        // adduser → hint
+        if (emojiMatch(reaction, addUserEmojis)) {
                 if (!isAdmin) return;
                 api.sendMessage(`🫂 Use the *add command to add users to the group.`, threadID);
                 return;
