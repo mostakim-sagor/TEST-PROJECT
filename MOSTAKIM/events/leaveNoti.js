@@ -1,50 +1,64 @@
 module.exports.config = {
-        name: "leave",
-        eventType: ["log:unsubscribe"],
-        version: "1.0.0",
-        credits: "Mirai Team",
-        description: "Thông báo bot hoặc người rời khỏi nhóm",
-        dependencies: {
-                "fs-extra": "",
-                "path": ""
-        }
+	name: "leaveNoti",
+	eventType: ["log:unsubscribe"],
+	version: "2.0.0",
+	credits: "MOSTAKIM",
+	description: "Leave message when a member leaves or is removed from the group"
 };
 
 module.exports.run = async function({ api, event, Users, Threads }) {
-        const fs   = require("fs-extra");
-        const path = require("path");
-        const { threadID } = event;
-        const leftID = String(event.logMessageData?.leftParticipantFbId);
+	const fs   = require("fs-extra");
+	const path = require("path");
+	const { threadID } = event;
 
-        // Bot itself left — skip
-        if (leftID === String(api.getCurrentUserID())) return;
+	const leftID = String(event.logMessageData?.leftParticipantFbId || "");
+	if (!leftID) return;
 
-        try {
-                const threadData = global.data.threadData.get(String(threadID))
-                        || (await Threads.getData(threadID)).data
-                        || {};
+	// ── Bot itself left — skip ───────────────────────────────────────────
+	if (leftID === String(api.getCurrentUserID())) return;
 
-                const name = global.data.userName.get(leftID)
-                        || await Users.getNameUser(leftID);
+	try {
+		// Get the leaver's name
+		const name = global.data?.userName?.get(leftID)
+			|| await Users.getNameUser(leftID).catch(() => leftID);
 
-                const type = (String(event.author) === leftID) ? "left" : "was removed by admin";
+		// Determine if self-left or was removed
+		const selfLeft = String(event.author) === leftID;
+		const action   = selfLeft ? "left the group" : "was removed from the group";
+		const icon     = selfLeft ? "🚪" : "🔨";
 
-                let msg = typeof threadData.customLeave !== "undefined"
-                        ? threadData.customLeave
-                        : "👋 {name} has {type} the group.";
+		// Check for custom leave message set via *setleave
+		const threadData = global.data?.threadData?.get(String(threadID))
+			|| (await Threads.getData(threadID).catch(() => ({ data: {} }))).data
+			|| {};
 
-                msg = msg.replace(/\{name}/g, name).replace(/\{type}/g, type);
+		let msg;
+		if (typeof threadData.customLeave === "string" && threadData.customLeave) {
+			msg = threadData.customLeave
+				.replace(/\{name}/g, name)
+				.replace(/\{type}/g, action);
+		} else {
+			// Default English leave message
+			const now = new Date().toLocaleString("en-BD", { timeZone: "Asia/Dhaka" });
+			msg =
+				`${icon} Member Left\n` +
+				`━━━━━━━━━━━━━━━━━━━━━━━\n\n` +
+				`👤 ${name} has ${action}.\n` +
+				`🕐 Time: ${now}\n\n` +
+				`We hope to see them again! 👋`;
+		}
 
-                const gifDir  = path.join(__dirname, "cache", "leaveGif");
-                const gifPath = path.join(gifDir, `${threadID}.gif`);
+		// ── Check for custom GIF ─────────────────────────────────────────
+		const gifDir  = path.join(__dirname, "cache", "leaveGif");
+		const gifPath = path.join(gifDir, `${threadID}.gif`);
+		if (!fs.existsSync(gifDir)) fs.mkdirSync(gifDir, { recursive: true });
 
-                // Fix: create dir if it does NOT exist
-                if (!fs.existsSync(gifDir)) fs.mkdirSync(gifDir, { recursive: true });
+		const msgObj = fs.existsSync(gifPath)
+			? { body: msg, attachment: fs.createReadStream(gifPath) }
+			: { body: msg };
 
-                const formPush = fs.existsSync(gifPath)
-                        ? { body: msg, attachment: fs.createReadStream(gifPath) }
-                        : { body: msg };
-
-                return api.sendMessage(formPush, threadID);
-        } catch (e) { console.error("[leaveNoti]", e.message); }
-}
+		return api.sendMessage(msgObj, threadID);
+	} catch (e) {
+		console.error("[leaveNoti]", e.message);
+	}
+};

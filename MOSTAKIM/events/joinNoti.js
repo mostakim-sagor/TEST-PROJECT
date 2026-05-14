@@ -1,77 +1,115 @@
 module.exports.config = {
-        name: "joinNoti",
-        eventType: ["log:subscribe"],
-        version: "1.0.4",
-        credits: "Mirai Team",
-        description: "Thông báo bot hoặc người vào nhóm",
-        dependencies: {
-                "fs-extra": ""
-        }
+	name: "joinNoti",
+	eventType: ["log:subscribe"],
+	version: "2.0.0",
+	credits: "MOSTAKIM",
+	description: "Welcome message when a member joins the group"
 };
 
-module.exports.run = async function({ api, event, Users }) {
-        const fs   = require("fs-extra");
-        const path = require("path");
-        const { threadID } = event;
-        const addedParticipants = event.logMessageData?.addedParticipants || [];
+module.exports.run = async function({ api, event, Users, Threads }) {
+	const fs   = require("fs-extra");
+	const path = require("path");
+	const { threadID } = event;
+	const addedParticipants = event.logMessageData?.addedParticipants || [];
+	if (!addedParticipants.length) return;
 
-        // Bot itself was added
-        if (addedParticipants.some(i => String(i.userFbId) === String(api.getCurrentUserID()))) {
-                try {
-                        api.changeNickname(
-                                `[ ${global.config.PREFIX} ] • ${global.config.BOTNAME || "MOSTAKIM V2 BOT"}`,
-                                threadID, api.getCurrentUserID()
-                        );
-                } catch (_) {}
-                return api.sendMessage(
-                        `✅ Hi! I'm ${global.config.BOTNAME || "MOSTAKIM V2 BOT"}!\n` +
-                        `🔑 Prefix: ${global.config.PREFIX || "*"}\n` +
-                        `💡 Type ${global.config.PREFIX || "*"}help to see all commands!`,
-                        threadID
-                );
-        }
+	const botID = String(api.getCurrentUserID());
 
-        try {
-                const threadInfo  = await new Promise((res, rej) =>
-                        api.getThreadInfo(String(threadID), (e, d) => e ? rej(e) : res(d))
-                );
-                const threadName  = threadInfo?.name || "this group";
-                const memberCount = (threadInfo?.participantIDs || []).length;
-                const threadData  = global.data.threadData.get(String(threadID)) || {};
+	// ── Bot itself was added to a group ──────────────────────────────────
+	if (addedParticipants.some(p => String(p.userFbId) === botID)) {
+		const prefix  = global.config?.PREFIX || "*";
+		const botName = global.config?.BOTNAME || "MOSTAKIM GOAT BOT";
+		try {
+			api.changeNickname(`[ ${prefix} ] • ${botName}`, threadID, botID);
+		} catch (_) {}
+		return api.sendMessage(
+			`👋 Hello everyone!\n\n` +
+			`🤖 I'm ${botName}\n` +
+			`🔑 My prefix is: [ ${prefix} ]\n` +
+			`💡 Type ${prefix}help to see all commands!\n\n` +
+			`━━━━━━━━━━━━━━━━━━━━━━━\n` +
+			`⚡ Powered by MOSTAKIM V2`,
+			threadID
+		);
+	}
 
-                const nameArray = [], mentions = [];
-                for (const p of addedParticipants) {
-                        const uid  = String(p.userFbId);
-                        const name = p.fullName || await Users.getNameUser(uid);
-                        nameArray.push(name);
-                        mentions.push({ tag: name, id: uid });
-                        if (!global.data.allUserID.includes(uid)) {
-                                await Users.createData(uid, { name, data: {} });
-                                global.data.userName.set(uid, name);
-                                global.data.allUserID.push(uid);
-                        }
-                }
+	// ── Regular member(s) joined ─────────────────────────────────────────
+	try {
+		// Get thread info
+		const threadInfo = await new Promise((res, rej) =>
+			api.getThreadInfo(String(threadID), (e, d) => e ? rej(e) : res(d))
+		).catch(() => ({}));
 
-                let msg = typeof threadData.customJoin !== "undefined"
-                        ? threadData.customJoin
-                        : "👋 Welcome {name}!\n🎉 You are member #{soThanhVien} of {threadName}!";
+		const threadName  = threadInfo?.name || "the group";
+		const memberCount = (threadInfo?.participantIDs || []).length;
 
-                msg = msg
-                        .replace(/\{name}/g, nameArray.join(", "))
-                        .replace(/\{type}/g, nameArray.length > 1 ? "you all" : "you")
-                        .replace(/\{soThanhVien}/g, memberCount)
-                        .replace(/\{threadName}/g, threadName);
+		// Collect joined members
+		const names    = [];
+		const mentions = [];
 
-                const gifDir  = path.join(__dirname, "cache", "joinGif");
-                const gifPath = path.join(gifDir, `${threadID}.gif`);
+		for (const p of addedParticipants) {
+			const uid  = String(p.userFbId);
+			if (uid === botID) continue;
 
-                // Fix: create dir if it does NOT exist
-                if (!fs.existsSync(gifDir)) fs.mkdirSync(gifDir, { recursive: true });
+			const name = p.fullName
+				|| global.data?.userName?.get(uid)
+				|| await Users.getNameUser(uid).catch(() => uid);
 
-                const formPush = fs.existsSync(gifPath)
-                        ? { body: msg, attachment: fs.createReadStream(gifPath), mentions }
-                        : { body: msg, mentions };
+			names.push(name);
+			mentions.push({ tag: name, id: uid });
 
-                return api.sendMessage(formPush, threadID);
-        } catch (e) { console.error("[joinNoti]", e.message); }
-}
+			// Register in DB if new
+			if (!global.data.allUserID.includes(uid)) {
+				await Users.createData(uid, { name, data: {} }).catch(() => {});
+				global.data.userName?.set(uid, name);
+				global.data.allUserID.push(uid);
+			}
+		}
+
+		if (!names.length) return;
+
+		// ── Build message ──────────────────────────────────────────────
+		// Check for custom join message set via *setjoin
+		const threadData = global.data?.threadData?.get(String(threadID))
+			|| (await Threads.getData(threadID).catch(() => ({ data: {} }))).data
+			|| {};
+
+		let msg;
+		if (typeof threadData.customJoin === "string" && threadData.customJoin) {
+			// Custom message with placeholders
+			msg = threadData.customJoin
+				.replace(/\{name}/g,        names.join(", "))
+				.replace(/\{type}/g,        names.length > 1 ? "you all" : "you")
+				.replace(/\{soThanhVien}/g, String(memberCount))
+				.replace(/\{threadName}/g,  threadName);
+		} else {
+			// Default English welcome
+			const now = new Date().toLocaleString("en-BD", { timeZone: "Asia/Dhaka" });
+			const multiple = names.length > 1;
+			msg =
+				`╔══════════════════════╗\n` +
+				`║     WELCOME TO GROUP!     ║\n` +
+				`╚══════════════════════╝\n\n` +
+				`👋 Welcome, ${names.map(n => `@${n}`).join(" & ")}!\n\n` +
+				`📍 Group  : ${threadName}\n` +
+				`👥 Members: ${memberCount} people\n` +
+				`🕐 Joined : ${now}\n\n` +
+				`━━━━━━━━━━━━━━━━━━━━━━━\n` +
+				`🎉 Glad to have ${multiple ? "you all" : "you"} here!\n` +
+				`Type ${global.config?.PREFIX || "*"}help to see bot commands.`;
+		}
+
+		// ── Check for custom GIF ───────────────────────────────────────
+		const gifDir  = path.join(__dirname, "cache", "joinGif");
+		const gifPath = path.join(gifDir, `${threadID}.gif`);
+		if (!fs.existsSync(gifDir)) fs.mkdirSync(gifDir, { recursive: true });
+
+		const msgObj = fs.existsSync(gifPath)
+			? { body: msg, attachment: fs.createReadStream(gifPath), mentions }
+			: { body: msg, mentions };
+
+		return api.sendMessage(msgObj, threadID);
+	} catch (e) {
+		console.error("[joinNoti]", e.message);
+	}
+};
