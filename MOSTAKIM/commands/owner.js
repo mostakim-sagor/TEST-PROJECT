@@ -1,6 +1,6 @@
 module.exports.config = {
         name: "owner",
-        aliases: ["botowner", "admininfo"],
+        aliases: ["admin", "admininfo"],
         version: "1.0.0",
         hasPermssion: 0,
         credits: "MOSTAKIM",
@@ -17,7 +17,7 @@ module.exports.config = {
 const OWNER_DETAILS = {
         // ── Personal Info ────────────────────────────────────────────
         name:       "MD MOSTAKIM ISLAM SAGOR", // তোমার নাম
-        nickname:   "MOSTAKIM GOAT",           // nickname
+        nickname:   "SAGOR",           // nickname
         age:        "21 Plus",                 // বয়স
         country:    "Bangladesh 🇧🇩",          // দেশ
         city:       "Dhaka",                   // শহর
