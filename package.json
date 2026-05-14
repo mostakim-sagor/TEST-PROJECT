@@ -2,9 +2,9 @@
   "name": "mostakim-v2-bot",
   "version": "1.2.15",
   "description": "A simple Facebook Messenger Bot",
-  "main": "mirai.js",
+  "main": "index.js",
   "scripts": {
-    "start": "node index",
+    "start": "node index.js",
     "login": "node login",
     "test": "node --trace-warnings --use_strict --async-stack-traces mirai"
   },
@@ -12,13 +12,7 @@
     "type": "git",
     "url": "git+https://github.com/miraipr0ject/miraiv2.git"
   },
-  "keywords": [
-    "bot",
-    "facebook",
-    "messenger",
-    "mirai",
-    "mostakim"
-  ],
+  "keywords": ["bot", "facebook", "messenger", "mirai", "mostakim"],
   "author": "CatalizCS & SpermLord & mostakim",
   "license": "GPL-3.0",
   "dependencies": {
