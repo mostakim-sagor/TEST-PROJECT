@@ -1,134 +1,61 @@
+const request = require("request");
+const fs = require("fs-extra");
+
 module.exports.config = {
-        name: "owner",
-        aliases: ["admin", "admininfo"],
-        version: "1.0.0",
-        hasPermssion: 0,
-        credits: "MOSTAKIM",
-        description: "Show bot owner/admin profile details",
-        commandCategory: "info",
-        usages: "",
-        cooldowns: 10
+  name: "owner",
+  version: "1.0.1",
+  hasPermssion: 0,
+  credits: "MOSTAKIM",
+  description: "Show Owner Info with styled box & random photo",
+  commandCategory: "Information",
+  usages: "owner",
+  cooldowns: 2
 };
 
-// ════════════════════════════════════════════════════════════════
-//  OWNER DETAILS — এখানে তোমার নিজের info দাও
-//  (config.json থেকে admin ID auto-detect হবে)
-// ════════════════════════════════════════════════════════════════
-const OWNER_DETAILS = {
-        // ── Personal Info ────────────────────────────────────────────
-        name:       "MD MOSTAKIM ISLAM SAGOR", // তোমার নাম
-        nickname:   "SAGOR",           // nickname
-        age:        "21 Plus",                 // বয়স
-        country:    "Bangladesh 🇧🇩",          // দেশ
-        city:       "Dhaka",                   // শহর
+module.exports.run = async function ({ api, event }) {
 
-        // ── Contact ──────────────────────────────────────────────────
-        fb:         "https://facebook.com/100058112936375", // Facebook profile link
-        github:     "",                        // GitHub link
-        email:      "",                        // Email
+  
+  const info = `
+╔═════════════════════ ✿
+║ ✨ 𝗢𝗪𝗡𝗘𝗥 𝗜𝗡𝗙𝗢 ✨
+╠═════════════════════ ✿
+║ 👑 𝗡𝗮𝗺𝗲 : MOSTAKIM ISLAM SAGOR
+║ 🎂 𝗔𝗴𝗲 : 20 +
+║ 💘 𝗥𝗲𝗹𝗮𝘁𝗶𝗼𝗻 : SINGLE 
+║ 🎓 𝗣𝗿𝗼𝗳𝗲𝘀𝘀𝗶𝗼𝗻 : STUDENT
+║ 📚 𝗘𝗱𝘂𝗰𝗮𝘁𝗶𝗼𝗻 : HSC
+║ 🏡 𝗔𝗱𝗱𝗿𝗲𝘀𝘀 : DHAKA, BANGLADESH 
+╠═════════════════════ ✿
+║ 🔗 𝗖𝗢𝗡𝗧𝗔𝗖𝗧 𝗟𝗜𝗡𝗞𝗦
+╠═════════════════════ ✿
+║ 📘 𝗙𝗮𝗰𝗲𝗯𝗼𝗼𝗸 :
+║ https://www.facebook.com/100058112936375
+║ ✈️ 𝗧𝗲𝗹𝗲𝗴𝗿𝗮𝗺 :
+║ t.me/M0STAKIM10X
+╚═════════════════════ ✿
+┌───────────────⭓
+│ 🕒 𝗨𝗽𝗱𝗮𝘁𝗲𝗱 𝗧𝗶𝗺𝗲
+├───────────────
+│ ${time}
+└───────────────⭓
+`;
 
-        // ── About Bot ─────────────────────────────────────────────────
-        botVersion: "2.0.0",              // Bot version
-        framework:  "mostakim-fca",       // Framework
-        language:   "Node.js",            // Language
+  const images = [
+    "https://i.imgur.com/TNPPtjT.jpeg",
+  ];
 
-        // ── Status / Bio ──────────────────────────────────────────────
-        bio:        "MOSTAKIM V2 BOT — Always Online ⚡"
-};
-// ════════════════════════════════════════════════════════════════
+  const randomImg = images[Math.floor(Math.random() * images.length)];
 
-module.exports.run = async function({ api, event, Users }) {
-        const { threadID, messageID } = event;
+  const callback = () => api.sendMessage(
+    {
+      body: info,
+      attachment: fs.createReadStream(__dirname + "/cache/owner.jpg")
+    },
+    event.threadID,
+    () => fs.unlinkSync(__dirname + "/cache/owner.jpg")
+  );
 
-        // ── Read admin IDs from config.json (live, always fresh) ────
-        let adminIDs = [];
-        try {
-                const fs   = require("fs");
-                const path = require("path");
-                const raw  = fs.readFileSync(path.join(__dirname, "../../config.json"), "utf-8");
-                adminIDs   = JSON.parse(raw).adminBot || [];
-        } catch (_) {
-                adminIDs = global.config?.ADMINBOT || [];
-        }
-        adminIDs = adminIDs.map(String);
-
-        // ── Fetch names for all admin IDs ────────────────────────────
-        const adminList = [];
-        for (const id of adminIDs) {
-                let name = "Unknown";
-                try {
-                        name = global.data?.userName?.get(id)
-                                || await Users.getNameUser(id)
-                                || "Unknown";
-                } catch (_) {}
-                adminList.push({ id, name });
-        }
-
-        // ── Build admin list section ──────────────────────────────────
-        const adminLines = adminList.map((a, i) =>
-                `  ${i + 1}. ${a.name}\n     🆔 ${a.id}`
-        ).join("\n\n");
-
-        // ── Build contact section (skip empty fields) ─────────────────
-        const d = OWNER_DETAILS;
-        const contactLines = [
-                d.fb     ? `  🔗 Facebook : ${d.fb}`     : null,
-                d.github ? `  🐙 GitHub   : ${d.github}` : null,
-                d.email  ? `  📧 Email    : ${d.email}`  : null
-        ].filter(Boolean).join("\n");
-
-        const personalLines = [
-                d.age     ? `  📅 Age      : ${d.age}`      : null,
-                d.country ? `  🌏 Country  : ${d.country}`  : null,
-                d.city    ? `  📍 City     : ${d.city}`      : null
-        ].filter(Boolean).join("\n");
-
-        const botName  = global.config?.BOTNAME || "MOSTAKIM V2 BOT";
-        const prefix   = global.config?.PREFIX  || "*";
-        const now      = new Date().toLocaleString("en-BD", { timeZone: "Asia/Dhaka" });
-
-        // ── Assemble full message ─────────────────────────────────────
-        let msg =
-                `╔══════════════════════╗\n` +
-                `║    👑 BOT OWNER INFO    ║\n` +
-                `╚══════════════════════╝\n\n`;
-
-        // Owner name & bio
-        msg +=
-                `👤 Owner   : ${d.name}\n` +
-                `💬 Nickname: ${d.nickname}\n`;
-
-        if (d.bio) msg += `✨ Bio     : ${d.bio}\n`;
-
-        // Personal
-        if (personalLines) {
-                msg += `\n━━━━ 📋 PERSONAL ━━━━━━━━━\n${personalLines}\n`;
-        }
-
-        // Contact
-        if (contactLines) {
-                msg += `\n━━━━ 📬 CONTACT ━━━━━━━━━━\n${contactLines}\n`;
-        }
-
-        // Bot info
-        msg +=
-                `\n━━━━ 🤖 BOT INFO ━━━━━━━━━\n` +
-                `  🤖 Name     : ${botName}\n` +
-                `  🔑 Prefix   : [ ${prefix} ]\n` +
-                `  📦 Version  : v${d.botVersion}\n` +
-                `  ⚙️  Framework: ${d.framework}\n` +
-                `  💻 Language : ${d.language}\n`;
-
-        // Admin list
-        msg +=
-                `\n━━━━ 👑 BOT ADMINS ━━━━━━━\n` +
-                `${adminLines || "  No admins configured"}\n`;
-
-        // Footer
-        msg +=
-                `\n━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-                `🕐 ${now}\n` +
-                `💡 Type ${prefix}help to see all commands`;
-
-        return api.sendMessage(msg, threadID, messageID);
+  return request(encodeURI(randomImg))
+    .pipe(fs.createWriteStream(__dirname + "/cache/owner.jpg"))
+    .on("close", () => callback());
 };
