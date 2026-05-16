@@ -1,115 +1,144 @@
 module.exports.config = {
-	name: "joinNoti",
-	eventType: ["log:subscribe"],
-	version: "2.0.0",
-	credits: "MOSTAKIM",
-	description: "Welcome message when a member joins the group"
+  name: "joinnoti",
+  eventType: ["log:subscribe"],
+  version: "1.0.6",
+  credits: "MOSTAKIM",  //please don't change credit
+  description: "Welcome message with optional image/video, dynamic session & profile links",
+  dependencies: {
+    "fs-extra": "",
+    "path": ""
+  }
+};
+
+module.exports.onLoad = function () {
+  const { existsSync, mkdirSync } = global.nodemodule["fs-extra"];
+  const { join } = global.nodemodule["path"];
+  const paths = [
+    join(__dirname, "cache", "botrun.gif"),
+    join(__dirname, "cache", "joinGif")
+  ];
+  for (const path of paths) {
+    if (!existsSync(path)) mkdirSync(path, { recursive: true });
+  }
 };
 
 module.exports.run = async function({ api, event, Users, Threads }) {
-	const fs   = require("fs-extra");
-	const path = require("path");
-	const { threadID } = event;
-	const addedParticipants = event.logMessageData?.addedParticipants || [];
-	if (!addedParticipants.length) return;
+  const fs = require("fs");
+  const path = require("path");
+  const { threadID } = event;
 
-	const botID = String(api.getCurrentUserID());
+  const botPrefix = global.config.PREFIX || "/";
+  const botName = global.config.BOTNAME || "𝐌𝐎𝐒𝐓𝐀𝐊𝐈𝐌 𝐕𝟐 𝐁𝐎𝐓";
 
-	// ── Bot itself was added to a group ──────────────────────────────────
-	if (addedParticipants.some(p => String(p.userFbId) === botID)) {
-		const prefix  = global.config?.PREFIX || "*";
-		const botName = global.config?.BOTNAME || "MOSTAKIM GOAT BOT";
-		try {
-			api.changeNickname(`[ ${prefix} ] • ${botName}`, threadID, botID);
-		} catch (_) {}
-		return api.sendMessage(
-			`👋 Hello everyone!\n\n` +
-			`🤖 I'm ${botName}\n` +
-			`🔑 My prefix is: [ ${prefix} ]\n` +
-			`💡 Type ${prefix}help to see all commands!\n\n` +
-			`━━━━━━━━━━━━━━━━━━━━━━━\n` +
-			`⚡ Powered by MOSTAKIM V2`,
-			threadID
-		);
-	}
+  // ===================== BOT ADDED =====================
+  if (event.logMessageData.addedParticipants.some(i => i.userFbId == api.getCurrentUserID())) {
+    await api.changeNickname(`[ ${botPrefix} ] • ${botName}`, threadID, api.getCurrentUserID());
 
-	// ── Regular member(s) joined ─────────────────────────────────────────
-	try {
-		// Get thread info
-		const threadInfo = await new Promise((res, rej) =>
-			api.getThreadInfo(String(threadID), (e, d) => e ? rej(e) : res(d))
-		).catch(() => ({}));
+    api.sendMessage(`⚡ 𝐌𝐎𝐒𝐓𝐀𝐊𝐈𝐌-𝐕2-𝐁𝐎𝐓 ⚡
 
-		const threadName  = threadInfo?.name || "the group";
-		const memberCount = (threadInfo?.participantIDs || []).length;
+Is successfully connected and running ♻️
+All services are active and ready to handle your requests 🔥
+Thank you for using this system — let’s get started 🚀
 
-		// Collect joined members
-		const names    = [];
-		const mentions = [];
+☢️ Prefix : ${botPrefix}`, threadID, () => {
 
-		for (const p of addedParticipants) {
-			const uid  = String(p.userFbId);
-			if (uid === botID) continue;
+      const randomGifPath = path.join(__dirname, "cache", "botrun.gif");
 
-			const name = p.fullName
-				|| global.data?.userName?.get(uid)
-				|| await Users.getNameUser(uid).catch(() => uid);
+      let selected = null;
+      if (fs.existsSync(randomGifPath)) {
+        const allFiles = fs.readdirSync(randomGifPath).filter(file =>
+          [".mp4", ".jpg", ".png", ".jpeg", ".gif", ".mp3"].some(ext => file.endsWith(ext))
+        );
 
-			names.push(name);
-			mentions.push({ tag: name, id: uid });
+        if (allFiles.length > 0) {
+          selected = fs.createReadStream(
+            path.join(randomGifPath, allFiles[Math.floor(Math.random() * allFiles.length)])
+          );
+        }
+      }
 
-			// Register in DB if new
-			if (!global.data.allUserID.includes(uid)) {
-				await Users.createData(uid, { name, data: {} }).catch(() => {});
-				global.data.userName?.set(uid, name);
-				global.data.allUserID.push(uid);
-			}
-		}
+      if (selected) {
+        api.sendMessage({ body: "Bot is now online!♻️", attachment: selected }, threadID);
+      }
+    });
 
-		if (!names.length) return;
+    return;
+  }
 
-		// ── Build message ──────────────────────────────────────────────
-		// Check for custom join message set via *setjoin
-		const threadData = global.data?.threadData?.get(String(threadID))
-			|| (await Threads.getData(threadID).catch(() => ({ data: {} }))).data
-			|| {};
+  // ===================== USER JOIN =====================
+  try {
+    const { createReadStream, readdirSync, existsSync } = global.nodemodule["fs-extra"];
+    let { threadName, participantIDs } = await api.getThreadInfo(threadID);
+    const threadData = global.data.threadData.get(parseInt(threadID)) || {};
 
-		let msg;
-		if (typeof threadData.customJoin === "string" && threadData.customJoin) {
-			// Custom message with placeholders
-			msg = threadData.customJoin
-				.replace(/\{name}/g,        names.join(", "))
-				.replace(/\{type}/g,        names.length > 1 ? "you all" : "you")
-				.replace(/\{soThanhVien}/g, String(memberCount))
-				.replace(/\{threadName}/g,  threadName);
-		} else {
-			// Default English welcome
-			const now = new Date().toLocaleString("en-BD", { timeZone: "Asia/Dhaka" });
-			const multiple = names.length > 1;
-			msg =
-				`╔══════════════════════╗\n` +
-				`║     WELCOME TO GROUP!     ║\n` +
-				`╚══════════════════════╝\n\n` +
-				`👋 Welcome, ${names.map(n => `@${n}`).join(" & ")}!\n\n` +
-				`📍 Group  : ${threadName}\n` +
-				`👥 Members: ${memberCount} people\n` +
-				`🕐 Joined : ${now}\n\n` +
-				`━━━━━━━━━━━━━━━━━━━━━━━\n` +
-				`🎉 Glad to have ${multiple ? "you all" : "you"} here!\n` +
-				`Type ${global.config?.PREFIX || "*"}help to see bot commands.`;
-		}
+    let mentions = [], nameArray = [], memLength = [], i = 0;
 
-		// ── Check for custom GIF ───────────────────────────────────────
-		const gifDir  = path.join(__dirname, "cache", "joinGif");
-		const gifPath = path.join(gifDir, `${threadID}.gif`);
-		if (!fs.existsSync(gifDir)) fs.mkdirSync(gifDir, { recursive: true });
+    for (let user of event.logMessageData.addedParticipants) {
+      nameArray.push(user.fullName);
+      mentions.push({ tag: user.fullName, id: user.userFbId });
+      memLength.push(participantIDs.length - i++);
+    }
 
-		const msgObj = fs.existsSync(gifPath)
-			? { body: msg, attachment: fs.createReadStream(gifPath), mentions }
-			: { body: msg, mentions };
+    memLength.sort((a, b) => a - b);
 
-		return api.sendMessage(msgObj, threadID);
-	} catch (e) {
-		console.error("[joinNoti]", e.message);
-	}
+    // ===================== SESSION LOGIC =====================
+    const now = new Date();
+    const hour = now.getHours();
+    let session;
+    if (hour >= 20 || hour < 6) session = "Night";
+    else if (hour >= 6 && hour < 12) session = "Morning";
+    else if (hour >= 12 && hour < 17) session = "Afternoon";
+    else session = "Evening";
+
+    // ===================== PROFILE LINKS =====================
+    const profileLinks = event.logMessageData.addedParticipants
+      .map(u => `fb.com/${u.userFbId}`)
+      .join('\n');
+
+    // ===================== MAIN JOIN MESSAGE =====================
+    let msg = (typeof threadData.customJoin === "undefined") ? 
+`Hello ${nameArray.join(', ')}.
+
+Welcome to ${threadName}
+
+✧ Have a nice ${session} 😊
+
+You are member number ${memLength.join(', ')}
+
+
+${profileLinks}` 
+    : threadData.customJoin
+        .replace(/\{userName}/g, nameArray.join(', '))
+        .replace(/\{boxName}/g, threadName)
+        .replace(/\{soThanhVien}/g, memLength.join(', '))
+        .replace(/\{session}/g, session)
+        .concat(`\nProfile Links:\n${profileLinks}`);
+
+    // ===================== RANDOM JOIN GIF =====================
+    const joinGifPath = path.join(__dirname, "cache", "joinGif");
+
+    let randomFile = null;
+    if (existsSync(joinGifPath)) {
+      const files = readdirSync(joinGifPath).filter(file =>
+        [".mp4", ".jpg", ".png", ".jpeg", ".gif", ".mp3"].some(ext => file.endsWith(ext))
+      );
+
+      if (files.length > 0) {
+        randomFile = createReadStream(
+          path.join(joinGifPath, files[Math.floor(Math.random() * files.length)])
+        );
+      }
+    }
+
+    // ===================== SEND MESSAGE =====================
+    return api.sendMessage(
+      randomFile
+        ? { body: msg, attachment: randomFile, mentions }
+        : { body: msg, mentions },
+      threadID
+    );
+
+  } catch (e) {
+    console.error(e);
+  }
 };
