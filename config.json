@@ -12,39 +12,24 @@
   "antiInbox": false,
   "language": "en",
   "notesLanguage": "change to your language with ISO 639-1 code, available languages: vi (Vietnamese), en (English)",
-  "nickNameBot": "MOSTAKIM V2 BOT",
-  "prefix": "*",
+  "nickNameBot": "{ ✪ } - 𝐌𝐎𝐒𝐓𝐀𝐊𝐈𝐌 𝐕𝟐 𝐁𝐎𝐓 ✗",
+  "prefix": "/",
   "noPrefix": true,
-  "noPrefixNotes": "When true, Bot Admins only can run commands without the prefix. Everyone else MUST use the prefix.",
+  "noPrefixNotes": "When true, Bot Admins (role 2) and Developers (role 4) can run commands without the prefix",
   "adminOnly": {
     "enable": false,
     "ignoreCommand": []
   },
   "reactBy": {
-    "delete": [
-      "🗑️",
-      "❌",
-      "😠",
-      "😡",
-      "😾"
-    ],
-    "kick": [
-      "🖕",
-      "🦵"
-    ],
-    "warn": [
-      "⚠️"
-    ],
-    "mute": [
-      "🔇",
-      "🤐"
-    ],
-    "adduser": [
-      "🫂"
-    ]
+    "delete": ["🗑️", "❌", "😠", "😡", "😾"],
+    "kick": ["🖕", "🦵"],
+    "warn": ["⚠️"],
+    "mute": ["🔇", "🤐"],
+    "adduser": ["🫂"]
   },
   "adminBot": [
-    "100058112936375"
+    "100058112936375",
+    "1320644595"
   ],
   "premiumUsers": [
     "100058112936375"
@@ -56,9 +41,7 @@
   "notes_devUsers": "List of developer IDs with full access (role 4)",
   "whiteListMode": {
     "enable": false,
-    "whiteListIds": [
-      "100058112936375"
-    ],
+    "whiteListIds": ["100058112936375"],
     "notes": "if you enable this feature, only the ids in the whiteListIds list can use the bot"
   },
   "whiteListModeThread": {
@@ -101,9 +84,9 @@
   },
   "autoUptime": {
     "enable": true,
-    "timeInterval": 120,
+    "timeInterval": 180,
     "url": "",
-    "notes": "the value of timeInterval is seconds, url is the url you want to send the request to (automatically detected for Replit, Render, Railway, VPS etc)"
+    "notes": "the value of timeInterval is seconds, url is the url you want to send the request to (automatically detected for hosting glitch or replit)"
   },
   "autoLoadScripts": {
     "enable": false,
@@ -113,7 +96,7 @@
   },
   "autoRefreshFbstate": true,
   "autoReloginWhenChangeAccount": false,
-  "autoRestartWhenListenMqttError": true,
+  "autoRestartWhenListenMqttError": false,
   "restartListenMqtt": {
     "enable": true,
     "timeRestart": 3600000,
@@ -179,6 +162,6 @@
     "maxRequestsPerMinute": 50,
     "requestCooldownMs": 60000,
     "errorCacheTtlMs": 300000,
-    "notes": "Document here: https://github.com/ntkhang03/fb-chat-api/blob/master/DOCS.md#apisetoptionsoptions"
+    "notes": "Document here: https://github.com/mostakim-sagor"
   }
 }
