@@ -1,0 +1,63 @@
+{
+  "_readme": "mostakim-fca library configuration file. Values here override config.json optionsFca section. Edit and restart bot to apply.",
+
+  "listenEvents": true,
+  "_listenEvents_note": "true = receive group join/leave/rename/icon events",
+
+  "selfListen": false,
+  "_selfListen_note": "true = bot responds to its own messages (keep false)",
+
+  "selfListenEvent": true,
+  "_selfListenEvent_note": "true = bot also receives events from its own actions",
+
+  "autoMarkRead": true,
+  "_autoMarkRead_note": "true = automatically mark messages as seen",
+
+  "autoMarkDelivery": false,
+  "_autoMarkDelivery_note": "true = automatically mark messages as delivered",
+
+  "autoReconnect": true,
+  "_autoReconnect_note": "true = auto reconnect if connection drops",
+
+  "forceLogin": true,
+  "_forceLogin_note": "true = force login even if already logged in on another device",
+
+  "online": true,
+  "_online_note": "true = bot always appears online",
+
+  "listenTyping": true,
+  "_listenTyping_note": "true = receive typing indicator events",
+
+  "updatePresence": false,
+  "_updatePresence_note": "true = send presence updates (uses extra requests, keep false)",
+
+  "simulateTyping": true,
+  "_simulateTyping_note": "true = show typing indicator before sending messages (looks more human)",
+
+  "randomUserAgent": false,
+  "_randomUserAgent_note": "true = use a different random user agent each time",
+
+  "persona": "desktop",
+  "_persona_note": "desktop or mobile — how the bot appears to Facebook",
+
+  "stealthMode": true,
+  "_stealthMode_note": "true = bot behaves like a real user — reduces ban risk",
+
+  "maxConcurrentRequests": 5,
+  "_maxConcurrentRequests_note": "max number of requests running at the same time",
+
+  "maxRequestsPerMinute": 50,
+  "_maxRequestsPerMinute_note": "max requests allowed per minute before throttling",
+
+  "requestCooldownMs": 60000,
+  "_requestCooldownMs_note": "cooldown time (ms) when rate limit is hit — 60000 = 1 minute",
+
+  "errorCacheTtlMs": 300000,
+  "_errorCacheTtlMs_note": "how long to cache errors (ms) — 300000 = 5 minutes",
+
+  "logLevel": "silent",
+  "_logLevel_note": "silent = no logs | verbose = detailed | silly = everything (use silent in production)",
+
+  "userAgent": "Mozilla/5.0 (Linux; Android 14; SM-S928B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Mobile Safari/537.36",
+  "_userAgent_note": "browser/device identity sent to Facebook — Android Chrome = appears as mobile"
+}
