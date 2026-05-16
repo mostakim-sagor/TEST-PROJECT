@@ -48,8 +48,8 @@ module.exports.run = function({ api, event, args }) {
 
 		if (!cmd) {
 			return api.sendMessage(
-				`❌ "${args[0]}" নামে কোনো command নেই।\n` +
-				`💡 ${prefix}help লিখলে সব ${totalCmds}টি command দেখা যাবে।`,
+				`❌ No command found with the name "${args[0]}".\n` +
+				`💡 Type ${prefix}help to see all ${totalCmds} available commands.`,
 				threadID, messageID
 			);
 		}
@@ -64,7 +64,7 @@ module.exports.run = function({ api, event, args }) {
 
 		return api.sendMessage(
 			`╔══════════════════════╗\n` +
-			`║     📖 COMMAND INFO      ║\n` +
+			`║     📖 𝐂𝐎𝐌𝐌𝐀𝐍𝐃 𝐈𝐍𝐅𝐎      ║\n` +
 			`╚══════════════════════╝\n\n` +
 			`🔹 Name      : ${prefix}${c.name}\n` +
 			`🔹 Version   : v${c.version || "1.0"}\n` +
@@ -72,10 +72,10 @@ module.exports.run = function({ api, event, args }) {
 			`🔹 Category  : ${catInfo.emoji} ${catInfo.label}\n` +
 			`🔹 Cooldown  : ${c.cooldowns || 3}s\n` +
 			`🔹 Role      : ${perm}\n\n` +
-			`📝 Description:\n${c.description || "No description."}\n\n` +
+			`📝 Description:\n${c.description || "No description available."}\n\n` +
 			`💡 Usage:\n  ${prefix}${c.name} ${c.usages || ""}`.trimEnd() + `\n\n` +
 			`━━━━━━━━━━━━━━━━━━━━━━━\n` +
-			`📦 Total loaded: ${totalCmds} commands`,
+			`📦 Total Loaded: ${totalCmds} commands`,
 			threadID, messageID
 		);
 	}
@@ -92,11 +92,11 @@ module.exports.run = function({ api, event, args }) {
 	const sorted = [...groups.entries()].sort(([a], [b]) => a.localeCompare(b));
 
 	// Build header
-	const botName = global.config?.BOTNAME || "MOSTAKIM V2 BOT";
+	const botName = global.config?.BOTNAME || "𝐌𝐎𝐒𝐓𝐀𝐊𝐈𝐌 𝐕𝟐 𝐁𝐎𝐓";
 	let msg = `╔══════════════════════╗\n`;
 	msg += `║   🤖 ${botName.padEnd(17)}║\n`.slice(0, 46) + `\n`;
 	msg += `╚══════════════════════╝\n`;
-	msg += `👑 Owner  : MOSTAKIM\n`;
+	msg += `👑 Owner  : 𝐌𝐃 𝐌𝐎𝐒𝐓𝐀𝐊𝐈𝐌 𝐈𝐒𝐋𝐀𝐌 𝐒𝐀𝐆𝐎𝐑\n`;
 	msg += `📦 Cmds   : ${totalCmds} commands\n`;
 	msg += `🔑 Prefix : [ ${prefix} ]\n`;
 	msg += `━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
@@ -110,8 +110,8 @@ module.exports.run = function({ api, event, args }) {
 	}
 
 	msg += `━━━━━━━━━━━━━━━━━━━━━━━\n`;
-	msg += `💡 ${prefix}help [command] → বিস্তারিত দেখুন\n`;
-	msg += `📌 উদাহরণ : ${prefix}help ping`;
+	msg += `💡 ${prefix}help [command] → View command details\n`;
+	msg += `📌 Example : ${prefix}help ping`;
 
 	return api.sendMessage(msg, threadID, messageID);
 };
